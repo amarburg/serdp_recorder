@@ -1,8 +1,8 @@
 
 
-#include "serdprecorder/SonarClient.h"
+#include "serdp_recorder/SonarClient.h"
 
-#include "serdprecorder/drawSonar.h"
+#include "serdp_common/draw_sonar.h"
 
 namespace serdprecorder {
 

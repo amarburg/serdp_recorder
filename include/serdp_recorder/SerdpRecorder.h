@@ -14,10 +14,10 @@ using namespace libblackmagic;
 #include "libvideoencoder/VideoEncoder.h"
 using libvideoencoder::Encoder;
 
-#include "serdprecorder/CameraState.h"
-#include "serdprecorder/VideoRecorder.h"
-#include "serdprecorder/SonarClient.h"
-#include "serdprecorder/OpenCVDisplay.h"
+#include "serdp_recorder/CameraState.h"
+#include "serdp_recorder/VideoRecorder.h"
+#include "serdp_recorder/SonarClient.h"
+#include "serdp_common/OpenCVDisplay.h"
 
 
 using cv::Mat;

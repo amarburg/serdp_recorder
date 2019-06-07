@@ -4,7 +4,7 @@
 
 #include "libg3logger/g3logger.h"
 
-#include "serdprecorder/VideoRecorder.h"
+#include "serdp_recorder/VideoRecorder.h"
 
 #include "gpmf-write/GPMF_writer.h"
 

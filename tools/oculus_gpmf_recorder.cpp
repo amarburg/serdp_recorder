@@ -1,3 +1,7 @@
+///
+///  Records either live sonar or sonar from a raw binary file to a
+///  stream of GPMF records
+///
 
 #include <memory>
 #include <thread>
@@ -16,7 +20,7 @@ using std::string;
 
 #include "liboculus/SonarPlayer.h"
 
-#include "serdprecorder/SonarClient.h"
+#include "serdp_recorder/SonarClient.h"
 
 #include "gpmf-write/GPMF_writer.h"
 

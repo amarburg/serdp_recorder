@@ -12,6 +12,8 @@ imports:
         git: https://github.com/apl-ocean-engineering/libvideoencoder.git
     libgpmf-fips:
         git: https://github.com/apl-ocean-engineering/libgpmf-fips.git
+    serdp_common:
+        git: https://github.com/apl-ocean-engineering/serdp_common.git
 
 defines:
   FIPS_EXCEPTIONS: ON

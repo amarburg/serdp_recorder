@@ -1,3 +1,7 @@
+///
+///  Thin wrapper around the SerdpRecorder class, which records multiple
+///  Decklink cameras and optionally an Oculus sonar.
+///
 
 // TODO:   Reduce the DRY
 
@@ -10,7 +14,8 @@ bool keepGoing = true;
 
 #include "libg3logger/g3logger.h"
 
-#include "serdprecorder/SerdpRecorder.h"
+#include "serdp_recorder/SerdpRecorder.h"
+
 shared_ptr<serdprecorder::SerdpRecorder> app;
 
 void signal_handler( int sig )

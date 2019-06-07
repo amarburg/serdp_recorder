@@ -2,16 +2,18 @@
 
 #include <string>
 #include <thread>
-#include "serdprecorder/IoServiceThread.h"
+#include "serdp_recorder/IoServiceThread.h"
 
 #include "liboculus/StatusRx.h"
 #include "liboculus/DataRx.h"
 using namespace liboculus;
 
-#include "serdprecorder/VideoRecorder.h"
-#include "serdprecorder/OpenCVDisplay.h"
+#include "serdp_recorder/VideoRecorder.h"
+#include "serdp_common/OpenCVDisplay.h"
 
 namespace serdprecorder {
+
+  using namespace serdp_common;
 
   class SonarClient {
   public:

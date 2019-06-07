@@ -5,7 +5,7 @@ if( NOT FIPS_IMPORT )
 	get_filename_component(FIPS_ROOT_DIR "../fips" ABSOLUTE)
 	include("${FIPS_ROOT_DIR}/cmake/fips.cmake")
 
-	fips_setup(PROJECT recorder)
+	fips_setup(PROJECT serdp_recorder)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -19,6 +19,14 @@ find_package(OpenCV COMPONENTS ${OPENCV_COMPONENTS} REQUIRED)
 
 ## C++ flags applied to all builds
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+## This is required on OSX?
+IF(APPLE)
+    # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
+    LINK_DIRECTORIES(/usr/local/lib)
+		fips_include_directories( /usr/local/include )
+ENDIF()
+
 
 ## Configure OpenCV ##
 
@@ -35,11 +43,11 @@ fips_include_directories(
 
 
 # The local library
-fips_begin_module( serdprecorder )
+fips_begin_module( serdp_recorder )
 
    fips_src( lib *.cpp )
 
-   fips_deps( videoencoder blackmagic oculus gpmf activeobject )
+   fips_deps( videoencoder blackmagic oculus gpmf activeobject serdp_common )
 
     fips_include_directories(
  	 	${CMAKE_SOURCE_DIR}/include
@@ -47,16 +55,16 @@ fips_begin_module( serdprecorder )
 
 	 fips_libs(  ${Boost_LIBRARIES} )
 
-  fips_end_module()
+fips_end_module()
 
 
 if( NOT FIPS_IMPORT )
   add_subdirectory("tools/")
 
 	if( FIPS_UNITTESTS )
-			 gtest_begin( serdprecorder )
+			 gtest_begin( serdp_recorder )
 			     fips_src( test/unit/ )
-			     fips_deps( serdprecorder )
+			     fips_deps( serdp_recorder )
 			gtest_end()
 	endif()
 

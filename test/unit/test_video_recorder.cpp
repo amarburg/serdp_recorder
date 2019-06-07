@@ -5,7 +5,7 @@
 #include <iostream>
 using namespace std;
 
-#include "serdprecorder/VideoRecorder.h"
+#include "serdp_recorder/VideoRecorder.h"
 using serdprecorder::VideoRecorder;
 
 TEST(TestVideoRecorder, makeFilename) {
