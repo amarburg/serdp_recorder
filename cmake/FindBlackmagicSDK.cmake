@@ -2,7 +2,7 @@
 #
 # This module looks for Blackmagic Decklink SDK
 #
-# BLACKMAGIC_ROOT can be provided as a hint.
+# BLACKMAGIC_DIR can be provided as a hint.
 #
 # It sets up : BLACKMAGIC_SRCS
 #              BLACKMAGIC_INCLUDE_DIR
@@ -22,6 +22,10 @@ else()
 endif()
 
 SET(TRIAL_PATHS
+ $ENV{BLACKMAGIC_DIR}/${BM_ARCH}/include
+ ${BLACKMAGIC_DIR}/${BM_ARCH}/include
+ $ENV{BLACKMAGIC_DIR}/include
+ ${BLACKMAGIC_DIR}/include
  $ENV{BLACKMAGIC_ROOT}/${BM_ARCH}/include
  ${BLACKMAGIC_ROOT}/${BM_ARCH}/include
  $ENV{BLACKMAGIC_ROOT}/include
