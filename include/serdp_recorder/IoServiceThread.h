@@ -28,9 +28,14 @@ public:
         if (!_thread) return; // stopped
 
         _service.stop();
-        _thread->join();
-        _service.reset();
-        _thread.reset();
+    }
+
+    void join()
+    {
+      if( !_thread ) return;
+      _thread->join();
+      _service.reset();
+      _thread.reset();
     }
 
     boost::asio::io_service &service()

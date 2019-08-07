@@ -26,6 +26,8 @@ namespace serdprecorder {
 
     void start();
 
+    void receivePing( const shared_ptr<SimplePingResult> &ping );
+
     void stop();
 
     unsigned int pingCount() const { return _pingCount; }
@@ -43,7 +45,9 @@ namespace serdprecorder {
     shared_ptr<Recorder> _recorder;
     shared_ptr<OpenCVDisplay> _display;
 
-    bool _done;
+    IoServiceThread _ioSrv;
+    StatusRx _statusRx;
+    std::unique_ptr<DataRx> _dataRx;
 
     unsigned int _pingCount;
 
