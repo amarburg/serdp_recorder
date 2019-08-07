@@ -20,6 +20,8 @@ namespace serdprecorder {
       _pingCount(0)
   {
 
+    _statusRx.setCallback( std::bind( &SonarClient::receiveStatus, this, std::placeholders::_1 ));
+
     if( _ipAddr != "auto" ) {
       LOG(INFO) << "Connecting to sonar with IP address " << _ipAddr;
       auto addr( boost::asio::ip::address_v4::from_string( _ipAddr ) );
@@ -56,24 +58,6 @@ namespace serdprecorder {
 
       _ioSrv.start();
 
-      while( !_dataRx ) {
-
-        /// Todo.  Change this to a callback...
-        // Attempt auto detection
-        if( _statusRx.status().wait_for(std::chrono::seconds(1)) ) {
-          if( _statusRx.status().valid() ) {
-            auto addr( _statusRx.status().ipAddr() );
-            LOG(INFO) << "Using sonar detected at " << addr;
-            _dataRx.reset( new DataRx( _ioSrv.service(), addr ) );
-          }
-        } else {
-          LOG(INFO) << "No sonars detected, still waiting...";
-        }
-
-      }
-
-      _dataRx->setCallback( std::bind( &SonarClient::receivePing, this, std::placeholders::_1 ) );
-
       _ioSrv.join();
     }
     catch (std::exception& e)
@@ -83,19 +67,32 @@ namespace serdprecorder {
 
   }
 
+  void SonarClient::receiveStatus( const SonarStatus &status ) {
+    if( _dataRx ) return;
 
-    void SonarClient::receivePing( const shared_ptr<SimplePingResult> &ping ) {
+    /// Todo.  Change this to a callback...
+    // Attempt auto detection
+    if( status.valid() ) {
+      auto addr( status.ipAddr() );
+      LOG(INFO) << "Using sonar detected at " << addr;
+      _dataRx.reset( new DataRx( _ioSrv.service(), addr ) );
 
-      ++_pingCount;
+      _dataRx->setCallback( std::bind( &SonarClient::receivePing, this, std::placeholders::_1 ) );
+    }
+  }
 
-      // Do something
-      auto valid = ping->valid();
-      LOG(DEBUG) << "Got " << (valid ? "valid" : "invalid") << " ping";
+  void SonarClient::receivePing( const shared_ptr<SimplePingResult> &ping ) {
 
-      // Send to recorder
-      _recorder->addSonar( ping );
+    ++_pingCount;
 
-      if( _display ) _display->showSonar( ping );
+    // Do something
+    auto valid = ping->valid();
+    LOG(DEBUG) << "Got " << (valid ? "valid" : "invalid") << " ping";
+
+    // Send to recorder
+    _recorder->addSonar( ping );
+
+    if( _display ) _display->showSonar( ping );
 
   }
 

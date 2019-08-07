@@ -26,6 +26,7 @@ namespace serdprecorder {
 
     void start();
 
+    void receiveStatus( const SonarStatus & status );
     void receivePing( const shared_ptr<SimplePingResult> &ping );
 
     void stop();
