@@ -16,11 +16,12 @@ namespace serdprecorder {
       _display( display ),
       _ioSrv(),
       _statusRx( _ioSrv.service() ),
-      _dataRx( nullptr ),
+      _dataRx( _ioSrv.service() ),
       _pingCount(0)
   {
 
     _statusRx.setCallback( std::bind( &SonarClient::receiveStatus, this, std::placeholders::_1 ));
+    _dataRx.setCallback( std::bind( &SonarClient::receivePing, this, std::placeholders::_1 ) );
 
     if( _ipAddr != "auto" ) {
       LOG(INFO) << "Connecting to sonar with IP address " << _ipAddr;
@@ -28,7 +29,7 @@ namespace serdprecorder {
 
       LOG_IF(FATAL,addr.is_unspecified()) << "Couldn't parse IP address" << _ipAddr;
 
-      _dataRx.reset( new DataRx( _ioSrv.service(), addr ) );
+      _dataRx.connect( addr );
     }
 
   }
@@ -68,16 +69,14 @@ namespace serdprecorder {
   }
 
   void SonarClient::receiveStatus( const SonarStatus &status ) {
-    if( _dataRx ) return;
+    if( _dataRx.connected() ) return;
 
     /// Todo.  Change this to a callback...
     // Attempt auto detection
     if( status.valid() ) {
       auto addr( status.ipAddr() );
       LOG(INFO) << "Using sonar detected at " << addr;
-      _dataRx.reset( new DataRx( _ioSrv.service(), addr ) );
-
-      _dataRx->setCallback( std::bind( &SonarClient::receivePing, this, std::placeholders::_1 ) );
+      _dataRx.connect( addr );
     }
   }
 

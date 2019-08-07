@@ -48,7 +48,7 @@ namespace serdprecorder {
 
     IoServiceThread _ioSrv;
     StatusRx _statusRx;
-    std::unique_ptr<DataRx> _dataRx;
+    DataRx _dataRx;
 
     unsigned int _pingCount;
 
