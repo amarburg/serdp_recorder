@@ -73,14 +73,22 @@ int main(int argc, char *argv[]) {
       // LOG(INFO) << "Data: " << std::hex << (uint32_t)data[4] << " " << (uint32_t)data[5] << " " << (uint32_t)data[6] << " " << (uint32_t)data[7];
       // LOG(INFO) << "Offset: " << std::hex << gs.pos;
 
-      MessageHeader header( data );
+      shared_ptr<MessageBuffer> buffer( new MessageBuffer( data, sizeof( OculusMessageHeader )) );
+      MessageHeader header( buffer );
 
-      if( header.validate() ) {
+      if( header.valid() ) {
 
-        SimplePingResult ping( (char *)GPMF_RawData(&gs) );
+        if( header.msgId() == messageSimplePingResult ) {
 
-        LOG(INFO) << "   --> Header is valid";
-        ping.validate();
+          const size_t dataSize = sizeof(OculusMessageHeader) + header.payloadSize();
+          const size_t alignSize = ((dataSize + 3) >> 2) << 2;
+          shared_ptr<MessageBuffer> pingBuffer( new MessageBuffer( data, alignSize ) );
+
+          SimplePingResult ping( pingBuffer );
+
+          LOG(INFO) << "   --> Header is valid";
+          ping.valid();
+        }
       }
     }
 

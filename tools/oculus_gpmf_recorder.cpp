@@ -193,21 +193,27 @@ int main( int argc, char **argv ) {
 
 
 int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCVDisplay> &display ) {
-  SonarPlayer player;
-  if( !player.open(filename) ) {
+  std::shared_ptr<SonarPlayerBase> player( SonarPlayerBase::OpenFile(filename) );
+
+  if( !player ) {
+    LOG(WARNING) << "Unable to open sonar file";
+    return -1;
+  }
+
+  if( !player->open(filename) ) {
     LOG(INFO) << "Failed to open " << filename;
     return -1;
   }
 
-  std::shared_ptr<SimplePingResult> ping( player.nextPing() );
+  std::shared_ptr<SimplePingResult> ping( player->nextPing() );
   while( ping ) {
-    ping->validate();
-
-    if( display ) display->showSonar( ping );
+    if( ping->valid()) {
+      if( display ) display->showSonar( ping );
+    }
 
     cv::waitKey(1000);
 
-    ping = player.nextPing();
+    ping = player->nextPing();
   }
 
   return 0;

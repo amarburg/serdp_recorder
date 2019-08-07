@@ -89,7 +89,7 @@ namespace serdprecorder {
 
     // Handle the one-off commands
     if( doListCards || doListInputModes ) {
-        if(doListCards) _deckLink->listCards();
+        if(doListCards) DeckLink::ListCards();
         if(doListInputModes) _deckLink->listInputModes();
       return 0;
     }

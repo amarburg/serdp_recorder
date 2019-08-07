@@ -84,9 +84,9 @@ static char FileExtension[] = "mov";
   {
     {
       // Mark as big endian so it doesn't try to byte-swap the data.
-      LOG(INFO) << "Writing " << (ping->dataSize() >> 2) << " dwords of sonar";
+      LOG(INFO) << "Writing " << (ping->buffer()->size() >> 2) << " dwords of sonar";
       auto err = GPMFWriteStreamStore(_sonarHandle, STR2FOURCC("OCUS"), GPMF_TYPE_UNSIGNED_LONG,
-                                          4, (ping->dataSize() >> 2), ping->data(), GPMF_FLAGS_BIG_ENDIAN);
+                                          4, (ping->buffer()->size() >> 2), ping->buffer()->ptr(), GPMF_FLAGS_BIG_ENDIAN);
       if( err != GPMF_ERROR_OK ) {
         LOG(WARNING) << "Error writing to GPMF store";
         return 0;

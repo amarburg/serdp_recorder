@@ -2,7 +2,7 @@
 
 #include "serdp_recorder/SonarClient.h"
 
-#include "serdp_common/draw_sonar.h"
+#include "serdp_common/DrawSonar.h"
 
 namespace serdprecorder {
 
@@ -43,7 +43,7 @@ namespace serdprecorder {
       IoServiceThread ioSrv;
 
       StatusRx statusRx( ioSrv.service() );
-      std::unique_ptr<DataRx> dataRx( nullptr );
+      std::unique_ptr<DataRxQueued> dataRx( nullptr );
 
       if( _ipAddr != "auto" ) {
         LOG(INFO) << "Connecting to sonar with IP address " << _ipAddr;
@@ -51,7 +51,7 @@ namespace serdprecorder {
 
         LOG_IF(FATAL,addr.is_unspecified()) << "Couldn't parse IP address" << _ipAddr;
 
-        dataRx.reset( new DataRx( ioSrv.service(), addr ) );
+        dataRx.reset( new DataRxQueued( ioSrv.service(), addr ) );
       }
 
       ioSrv.start();
@@ -65,7 +65,7 @@ namespace serdprecorder {
             if( statusRx.status().valid() ) {
               auto addr( statusRx.status().ipAddr() );
               LOG(INFO) << "Using sonar detected at " << addr;
-              dataRx.reset( new DataRx( ioSrv.service(), addr ) );
+              dataRx.reset( new DataRxQueued( ioSrv.service(), addr ) );
             }
           } else {
             LOG(INFO) << "No sonars detected, still waiting...";
@@ -80,7 +80,7 @@ namespace serdprecorder {
             ++_pingCount;
 
             // Do something
-            auto valid = ping->validate();
+            auto valid = ping->valid();
             LOG(DEBUG) << "Got " << (valid ? "valid" : "invalid") << " ping";
 
             // Send to recorder

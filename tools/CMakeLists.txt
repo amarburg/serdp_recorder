@@ -27,7 +27,7 @@ fips_end_app()
 fips_begin_app( gpmf_parser cmdline )
   fips_files( gpmf_parser.cpp GPMF_print.cpp )
 
-  fips_deps( gpmf g3logger )
+  fips_deps( gpmf g3logger oculus )
 
   fips_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
