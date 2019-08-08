@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
   CLI11_PARSE(app, argc, argv);
 
-  // Just default to INFO 
+  // Just default to INFO
   logger.stderrHandle->call( &ColorStderrSink::setThreshold, INFO );
   if( verbosity > 0  ) {
     logger.stderrHandle->call( &ColorStderrSink::setThreshold, DEBUG );
@@ -90,6 +90,10 @@ int main(int argc, char *argv[]) {
           ping.valid();
         }
       }
+    } else if( GPMF_Key(&gs) == MAKEID('S', 'T', 'M', 'P')) {
+      uint64_t swap, *ts = (uint64_t *)GPMF_RawData(&gs);
+      swap = BYTESWAP64( *ts );
+      LOG(INFO) << "Timestamp: " << swap << " us";
     }
 
   } while (GPMF_OK == GPMF_Next(&gs, GPMF_RECURSE_LEVELS));

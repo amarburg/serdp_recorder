@@ -34,14 +34,17 @@ using std::ios_base;
 using std::shared_ptr;
 using std::unique_ptr;
 
-int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCVDisplay> &display = std::shared_ptr<OpenCVDisplay>(nullptr) );
+int playbackSonarFile( const std::string &filename,
+                        const std::shared_ptr<OpenCVDisplay> &display = std::shared_ptr<OpenCVDisplay>(nullptr),
+                        const shared_ptr<Recorder> &recorder = shared_ptr<Recorder>(nullptr),
+                        int count = -1 );
 
 
 int main( int argc, char **argv ) {
 
   libg3logger::G3Logger logger("ocClient");
 
-  CLI::App app{"Simple Oculus Sonar app"};
+  CLI::App app{"Like oc_client but records in GPMF using serdp_recorder::GpfmRecorder"};
 
   int verbosity = 0;
   app.add_flag("-v", verbosity, "Additional output (use -vv for even more!)");
@@ -68,10 +71,6 @@ int main( int argc, char **argv ) {
 
   shared_ptr<OpenCVDisplay> display;
 
-  if( !inputFilename.empty() ) {
-    return playbackSonarFile( inputFilename, display );
-  }
-
   shared_ptr<GPMFRecorder> output( new GPMFRecorder );
 
   if( !outputFilename.empty() ) {
@@ -81,6 +80,10 @@ int main( int argc, char **argv ) {
       LOG(WARNING) << "Unable to open " << outputFilename << " for output.";
       exit(-1);
     }
+  }
+
+  if( !inputFilename.empty() ) {
+    return playbackSonarFile( inputFilename, display, output, count );
   }
 
   LOG(INFO) << "Enabling sonar";
@@ -103,7 +106,9 @@ int main( int argc, char **argv ) {
 }
 
 
-int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCVDisplay> &display ) {
+int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCVDisplay> &display,
+                          const shared_ptr<Recorder> &recorder, int count ) {
+
   std::shared_ptr<SonarPlayerBase> player( SonarPlayerBase::OpenFile(filename) );
 
   if( !player ) {
@@ -116,15 +121,22 @@ int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCV
     return -1;
   }
 
+
+
   std::shared_ptr<SimplePingResult> ping( player->nextPing() );
-  while( ping ) {
+  int numPings = 1;
+
+  while( ping && (count >= 0 && numPings <= count) ) {
     if( ping->valid()) {
-      if( display ) display->showSonar( ping );
+      //if( display ) display->showSonar( ping );
+      if( recorder ) recorder->addSonar( ping );
     }
 
-    cv::waitKey(1000);
+
+    cv::waitKey(1);
 
     ping = player->nextPing();
+    numPings++;
   }
 
   return 0;

@@ -60,7 +60,8 @@ namespace serdprecorder {
     GPMFWriteSetScratchBuffer( _gpmfHandle, _scratch.get(), BufferSize );
 
     const char name[]="Oculus MB1200d";
-    GPMFWriteStreamStore(_sonarHandle, GPMF_KEY_STREAM_NAME, GPMF_TYPE_STRING_ASCII, strlen(name), 1, (void *)name, GPMF_FLAGS_STICKY);
+    GPMFWriteStreamStore(_sonarHandle, GPMF_KEY_STREAM_NAME, GPMF_TYPE_STRING_ASCII,
+                          strlen(name), 1, (void *)name, GPMF_FLAGS_STICKY);
   }
 
   void GPMFRecorder::flushGPMF()
@@ -72,11 +73,14 @@ namespace serdprecorder {
 
   size_t GPMFRecorder::writeSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, uint32_t **buffer, size_t bufferSize )
   {
+    const uint64_t timestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
     {
       // Mark as big endian so it doesn't try to byte-swap the data.
       LOG(INFO) << "Writing " << (ping->buffer()->size() >> 2) << " dwords of sonar";
-      auto err = GPMFWriteStreamStore(_sonarHandle, STR2FOURCC("OCUS"), GPMF_TYPE_UNSIGNED_LONG,
-                                          4, (ping->buffer()->size() >> 2), ping->buffer()->ptr(), GPMF_FLAGS_BIG_ENDIAN);
+      auto err = GPMFWriteStreamStoreStamped(_sonarHandle, STR2FOURCC("OCUS"), GPMF_TYPE_UNSIGNED_LONG,
+                                          4, (ping->buffer()->size() >> 2), ping->buffer()->ptr(),
+                                          GPMF_FLAGS_BIG_ENDIAN | GPMF_FLAGS_STORE_ALL_TIMESTAMPS, timestamp);
       if( err != GPMF_ERROR_OK ) {
         LOG(WARNING) << "Error writing to GPMF store";
         return 0;
