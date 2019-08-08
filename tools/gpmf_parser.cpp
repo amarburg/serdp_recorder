@@ -33,9 +33,9 @@ int main(int argc, char *argv[]) {
 
   CLI11_PARSE(app, argc, argv);
 
-  if( verbosity == 1 ) {
-    logger.stderrHandle->call( &ColorStderrSink::setThreshold, INFO );
-  } else if (verbosity > 1 ) {
+  // Just default to INFO 
+  logger.stderrHandle->call( &ColorStderrSink::setThreshold, INFO );
+  if( verbosity > 0  ) {
     logger.stderrHandle->call( &ColorStderrSink::setThreshold, DEBUG );
   }
 

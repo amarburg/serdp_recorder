@@ -13,63 +13,9 @@ namespace fs = boost::filesystem;
 
 #include "liboculus/SimplePingResult.h"
 
+#include "serdp_recorder/GpmfRecorder.h"
 
 namespace serdprecorder {
-
-  class Recorder {
-  public:
-    Recorder();
-    virtual ~Recorder();
-
-    // bool setDoSonar( bool d )                   { return _doSonar = d; }
-    // void setOutputDir( const std::string &dir ) { _outputDir = dir; }
-    //
-    // virtual bool open( int width, int height, float frameRate, int numStreams = 1);
-    // void close();
-
-    virtual bool addMats( std::vector<cv::Mat> &mats ) = 0;
-
-    virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping ) = 0;
-
-  };
-
-  //==
-
-
-    //==
-
-    class GPMFRecorder : public Recorder {
-    public:
-
-      GPMFRecorder();
-      //VideoRecorder( const fs::path &outputDir, bool doSonar = false );
-      virtual ~GPMFRecorder();
-
-      bool open( const std::string &filename );
-      void close();
-
-      bool isRecording() const { return _out.is_open(); }
-
-      virtual bool addMats( std::vector<cv::Mat> &mats ) { return false; }
-      virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping );
-
-    protected:
-
-      void initGPMF();
-      void flushGPMF();
-      size_t writeSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, uint32_t **buffer, size_t bufferSize );
-
-
-      std::unique_ptr<uint32_t> _scratch;
-
-      std::ofstream _out;
-
-      size_t _gpmfHandle;
-      size_t _sonarHandle;
-
-    };
-
- //==
 
   class VideoRecorder : public GPMFRecorder {
   public:

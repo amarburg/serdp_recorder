@@ -412,8 +412,8 @@ void PrintGPMF(GPMF_stream *ms)
 	// 	indent--;
 	// }
 
-	char keyStr[5];
-	snprintf(keyStr, 4, "%c%c%c%c", (key >> 0) & 0xff, (key >> 8) & 0xff, (key >> 16) & 0xff, (key >> 24) & 0xff);
+	char keyStr[6];
+	snprintf(keyStr, 5, "%c%c%c%c", (key >> 0) & 0xff, (key >> 8) & 0xff, (key >> 16) & 0xff, (key >> 24) & 0xff);
 
 	if (type == 0) {
 		LOGF(INFO, "%s%s nest size %d ", spacer, keyStr, size);

@@ -45,12 +45,12 @@ fips_include_directories(
 # The local library
 fips_begin_module( serdp_recorder )
 
-   fips_src( lib *.cpp )
+   fips_src( lib )
 
    fips_deps( videoencoder blackmagic oculus gpmf activeobject serdp_common )
 
-    fips_include_directories(
- 	 	${CMAKE_SOURCE_DIR}/include
+   fips_include_directories(
+ 	   ${CMAKE_SOURCE_DIR}/include
  	 )
 
 	 fips_libs(  ${Boost_LIBRARIES} )
