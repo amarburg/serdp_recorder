@@ -10,81 +10,83 @@
 
 using namespace libvideoencoder;
 
-namespace serdprecorder {
+namespace serdp_recorder {
 
   using namespace std;
 
   static char FileExtension[] = "mov";
 
+  using namespace libvideoencoder;
 
   //=================================================================
 
-  VideoRecorder::VideoRecorder( )
+  VideoRecorder::VideoRecorder( const std::string &filename, int width, int height,
+            float frameRate, int numStreams, bool doSonar )
     : GPMFRecorder(),
       _frameNum(0),
-      _doSonar( false ),
-      _sonarTrack( -1 ),
-      _outputDir( "/tmp/" ),
-      _isReady( false ),
+      _sonarFrameNum(0),
       _pending(0),
       _mutex(),
-      _encoder( new Encoder(FileExtension, AV_CODEC_ID_PRORES) ),
-      _writer(nullptr)
+      _writer(FileExtension, AV_CODEC_ID_PRORES),
+      _videoTracks(),
+      _dataTrack( doSonar ? new DataTrack(_writer) : nullptr )
   {
-    ;
+    for( int i = 0; i < numStreams; ++i )
+      _videoTracks.push_back( std::shared_ptr<VideoTrack>(new VideoTrack(_writer, width, height, frameRate) ) );
+
+    _writer.open( filename );
   }
 
   VideoRecorder::~VideoRecorder()
   {
-    if( _writer ) _writer.reset();
-    if( _encoder ) _encoder.reset();
+    _writer.close();
   }
 
 
-  bool VideoRecorder::open( int width, int height, float frameRate, int numStreams ) {
-    auto filename = makeFilename();
+  // bool VideoRecorder::open( int width, int height, float frameRate, int numStreams ) {
+  //   auto filename = makeFilename();
+  //
+  //   _writer.reset( _encoder->makeWriter() );
+  //   CHECK( _writer != nullptr );
+  //
+  //   _writer->addVideoTrack( width, height, frameRate, numStreams );
+  //
+  //   if( _doSonar )
+  //     _sonarTrack = _writer->addDataTrack();
+  //
+  //   LOG(INFO) << "Opening video file " << filename;
+  //
+  //   _writer->open(filename.string());
+  //
+  //   _frameNum = 0;
+  //   _sonarWritten = 0;
+  //   _startTime = std::chrono::system_clock::now();
+  //
+  //   flushGPMF();
+  //
+  //   _isReady = true;
+  //   {
+  //     std::lock_guard<std::mutex> lock(_mutex);
+  //     _pending = 0;
+  //   }
+  //   return true;
+  // }
 
-    _writer.reset( _encoder->makeWriter() );
-    CHECK( _writer != nullptr );
 
-    _writer->addVideoTrack( width, height, frameRate, numStreams );
-
-    if( _doSonar )
-      _sonarTrack = _writer->addDataTrack();
-
-    LOG(INFO) << "Opening video file " << filename;
-
-    _writer->open(filename.string());
-
-    _frameNum = 0;
-    _sonarWritten = 0;
-    _startTime = std::chrono::system_clock::now();
-
-    flushGPMF();
-
-    _isReady = true;
-    {
-      std::lock_guard<std::mutex> lock(_mutex);
-      _pending = 0;
-    }
-    return true;
-  }
-
-
-  void VideoRecorder::close() {
-
-    while(true) {
-      std::lock_guard<std::mutex> lock(_mutex);
-      if( _pending == 0 ) break;
-    }
-
-    LOG(INFO) << "Closing video with " << _frameNum << " frames";
-    LOG_IF(INFO, _doSonar) << "     Wrote " << _sonarWritten << " frames of sonar";
-
-    _isReady = false;
-    _frameNum = 0;
-    _writer.reset();
-  }
+  // void VideoRecorder::close() {
+  //
+  //   while(true) {
+  //     std::lock_guard<std::mutex> lock(_mutex);
+  //     if( _pending == 0 ) break;
+  //   }
+  //
+  //   LOG(INFO) << "Closing video with " << _frameNum << " frames";
+  //   LOG_IF(INFO, _doSonar) << "     Wrote " << _sonarWritten << " frames of sonar";
+  //
+  //   _isReady = false;
+  //   _frameNum = 0;
+  //   _writer.reset();
+  // }
 
 
   bool VideoRecorder::addMats( std::vector<cv::Mat> &mats ) {
@@ -107,32 +109,26 @@ namespace serdprecorder {
 
 
   bool VideoRecorder::addMat( cv::Mat image, unsigned int stream ) {
-      if( !isRecording() ) return false;
-
-    if( !_writer ) return false;
 
     {
       std::lock_guard<std::mutex> lock(_mutex);
       ++_pending;
     }
 
-    //Convert to AVFrame
-    AVFrame *frame = av_frame_alloc();   ///avcodec_alloc_frame();
-    CHECK( frame != nullptr ) << "Cannot create frame";
+    // TODO:  Validate valid stream number
 
+    // TODO:  Validate image.size() == videoTrack.size()
     auto sz = image.size();
 
-    frame->width = sz.width;
-    frame->height = sz.height;
-    frame->format = AV_PIX_FMT_BGRA;
-    auto res = av_frame_get_buffer(frame, 0);
+
+    AVFrame *frame = _videoTracks[stream]->makeFrame();
 
     // Try this_`
     // memcpy for now
     cv::Mat frameMat( sz.height, sz.width, CV_8UC4, frame->data[0]);
     image.copyTo( frameMat );
 
-    res = _writer->addFrame( frame, _frameNum, stream );
+    auto res = _videoTracks[stream]->addFrame( frame, _frameNum );
 
     av_frame_free( &frame );
 
@@ -145,10 +141,8 @@ namespace serdprecorder {
   }
 
   bool VideoRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping ) {
-    if( !isRecording() ) return false;
 
-    if( !_writer ) return false;
-    if( _sonarTrack < 0 ) return false;
+    if( !_dataTrack ) return false;
 
     {
       std::lock_guard<std::mutex> lock(_mutex);
@@ -168,21 +162,12 @@ namespace serdprecorder {
         return false;
       }
 
-      // And data track
-      AVPacket *pkt = av_packet_alloc();
-      av_packet_from_data(pkt, (uint8_t *)buffer, payloadSize );
-
-      pkt->stream_index = _sonarTrack;
+      //LOG(WARNING) << "   packet->pts " << pkt->pts;
 
       std::chrono::microseconds timePt =  std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - _startTime);
+      _dataTrack->writeData( (uint8_t *)buffer, payloadSize,  timePt.count() );
 
-      pkt->dts = timePt.count();
-      pkt->pts = pkt->dts;
-
-      LOG(WARNING) << "   packet->pts " << pkt->pts;
-
-      ++_sonarWritten;
-      _writer->addPacket( pkt );
+      ++_sonarFrameNum;
     }
 
     {
@@ -193,7 +178,7 @@ namespace serdprecorder {
   }
 
 
-  fs::path VideoRecorder::makeFilename() {
+  fs::path VideoRecorder::MakeFilename( std::string &outputDir ) {
 
     std::time_t t = std::time(nullptr);
 
@@ -205,7 +190,7 @@ namespace serdprecorder {
     strcat( mbstr, ".");
     strcat( mbstr, FileExtension);
 
-    return fs::path(_outputDir) /= mbstr;
+    return fs::path(outputDir) /= mbstr;
   }
 
 

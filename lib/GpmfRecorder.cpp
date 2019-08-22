@@ -10,7 +10,7 @@
 
 using namespace libvideoencoder;
 
-namespace serdprecorder {
+namespace serdp_recorder {
 
   using namespace std;
 
@@ -21,7 +21,7 @@ namespace serdprecorder {
 
   const size_t BufferSize = 10 * 1024 * 1024;
 
-  GPMFRecorder::GPMFRecorder( )
+  GPMFRecorder::GPMFRecorder( const std::string &filename )
     : Recorder(),
       _scratch( new uint32_t[BufferSize] ),
       _out(),
@@ -32,6 +32,8 @@ namespace serdprecorder {
       CHECK( _sonarHandle ) << "Unable to initialize GPMF stream for sonar";
 
       initGPMF();
+
+      if( filename.size() > 0 ) open( filename );
     }
 
   GPMFRecorder::~GPMFRecorder()

@@ -9,20 +9,19 @@ namespace fs = boost::filesystem;
 
 #include <opencv2/opencv.hpp>
 
-#include "libvideoencoder/VideoEncoder.h"
-
 #include "liboculus/SimplePingResult.h"
 
 #include "serdp_recorder/Recorder.h"
 
-namespace serdprecorder {
+namespace serdp_recorder {
 
-  /// Specilization of Recorder which saves the sonar data in a GPMF stream;
-  /// Writes resulting GPMF stream to a file
+  /// Specialization of Recorder which saves the sonar data in a GPMF stream;
+  /// Ignores any video Mats.
+  /// Writes resulting GPMF-encoded stream to a file
   class GPMFRecorder : public Recorder {
   public:
 
-    GPMFRecorder();
+    GPMFRecorder( const std::string &filename = "" );
     //VideoRecorder( const fs::path &outputDir, bool doSonar = false );
     virtual ~GPMFRecorder();
 

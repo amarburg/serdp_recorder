@@ -6,21 +6,10 @@
 using namespace std;
 
 #include "serdp_recorder/VideoRecorder.h"
-using serdprecorder::VideoRecorder;
+using serdp_recorder::VideoRecorder;
 
 TEST(TestVideoRecorder, makeFilename) {
 
-  VideoRecorder recorder;
-  recorder.setOutputDir( "/tmp/" );
-
-  {
-    auto p = recorder.makeFilename();
-    cout << p << endl;
-  }
-
-  {
-    auto p = recorder.makeFilename();
-    cout << p << endl;
-  }
+  VideoRecorder recorder("/tmp/foo.mov", 640, 480, 30 );
 
 }

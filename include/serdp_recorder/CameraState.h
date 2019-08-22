@@ -8,7 +8,7 @@
 #include "libbmsdi/values.h"
 
 
-namespace serdprecorder {
+namespace serdp_recorder {
 
   using std::cout;
   using std::endl;

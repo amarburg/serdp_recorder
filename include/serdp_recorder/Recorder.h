@@ -9,11 +9,9 @@ namespace fs = boost::filesystem;
 
 #include <opencv2/opencv.hpp>
 
-#include "libvideoencoder/VideoEncoder.h"
-
 #include "liboculus/SimplePingResult.h"
 
-namespace serdprecorder {
+namespace serdp_recorder {
 
   /// Abstract base class for a recorder which an handle multiple tracks of
   /// video (supplied at cv:Mats) and a single track of sonar data
@@ -21,7 +19,7 @@ namespace serdprecorder {
   public:
     Recorder()
       {;}
-      
+
     virtual ~Recorder()
       {;}
 

@@ -19,14 +19,14 @@ using std::string;
 #include <opencv2/highgui.hpp>
 
 #include "liboculus/SonarPlayer.h"
-
-#include "serdp_recorder/SonarClient.h"
-
-#include "gpmf-write/GPMF_writer.h"
-
-
+#include "liboculus/SonarClient.h"
 using namespace liboculus;
-using namespace serdprecorder;
+
+#include "serdp_common/OpenCVDisplay.h"
+using namespace serdp_common;
+
+#include "serdp_recorder/GpmfRecorder.h"
+using namespace serdp_recorder;
 
 using std::ofstream;
 using std::ios_base;
@@ -58,8 +58,8 @@ int main( int argc, char **argv ) {
   string inputFilename("");
   app.add_option("-i,--input", inputFilename, "Filename to read sonar data from.");
 
-  int count = -1;
-  app.add_option("-c,--count", count, "");
+  int stopAfter = -1;
+  app.add_option("-c,--count", stopAfter, "");
 
   CLI11_PARSE(app, argc, argv);
 
@@ -74,7 +74,7 @@ int main( int argc, char **argv ) {
   shared_ptr<GPMFRecorder> output( new GPMFRecorder );
 
   if( !outputFilename.empty() ) {
-    output->open( outputFilename );
+    output.reset( new GPMFRecorder( outputFilename ) );
 
     if( !output->isRecording() ) {
       LOG(WARNING) << "Unable to open " << outputFilename << " for output.";
@@ -83,25 +83,28 @@ int main( int argc, char **argv ) {
   }
 
   if( !inputFilename.empty() ) {
-    return playbackSonarFile( inputFilename, display, output, count );
+    return playbackSonarFile( inputFilename, display, output, stopAfter );
   }
+
+  int count = 0;
 
   LOG(INFO) << "Enabling sonar";
-  std::unique_ptr<SonarClient> sonar( new SonarClient( sonarIp, output, display ) );
+  std::unique_ptr<SonarClient> sonar( new SonarClient( sonarIp ) );
+
+  sonar->setDataRxCallback( [&]( const shared_ptr<SimplePingResult> &ping ) {
+      // Do something
+    auto valid = ping->valid();
+    LOG(INFO) << "Got " << (valid ? "valid" : "invalid") << " ping";
+
+    if( output ) output->addSonar( ping );
+
+    count++;
+    if( (stopAfter>0) && (count >= stopAfter)) sonar->stop();
+  });
+
   sonar->start();
 
-  while(true) {
-    if( (count > 0) && (sonar->pingCount() >= count ) ) {
-      LOG(INFO) << "Collected " << count << " pings, quitting...";
-      break;
-    }
-
-    usleep(100000);
-  }
-
-  if( output->isRecording() ) output->close();
-
-  sonar->stop();
+  sonar->join();
   exit(0);
 }
 
