@@ -10,6 +10,6 @@ using serdp_recorder::VideoRecorder;
 
 TEST(TestVideoRecorder, makeFilename) {
 
-  VideoRecorder recorder("/tmp/foo.mov", 640, 480, 30 );
+  VideoRecorder recorder("/tmp/serdp_recorderTest_foo.mov", 640, 480, 30 );
 
 }

@@ -15,15 +15,17 @@ namespace serdp_recorder {
 
   SerdpRecorder::SerdpRecorder( void )
     : _keepGoing( true ),
-      _deckLink( new DeckLink() ),
-      _camState( new CameraState( _deckLink->output().sdiProtocolBuffer() ) ),
-      _recorder( nullptr ),
+      _bmClient( new InputOutputClient() ),
+      _camState( new CameraState( _bmClient->output().sdiProtocolBuffer() ) ),
       _sonar( nullptr ),
       _display( new OpenCVDisplay( std::bind( &SerdpRecorder::handleKey, this, _1 ) ) ),
-      _pingCount(0)
-  {}
-
-
+      _recorder( nullptr ),
+      _displayed(0),
+      _pingCount(0),
+      _thread( active_object::Active::createActive() )
+  {
+    _bmClient->input().setNewImagesCallback( std::bind( &SerdpRecorder::receiveImages, this, std::placeholders::_1 ));
+  }
 
   int SerdpRecorder::run( int argc, char **argv )
   {
@@ -91,7 +93,10 @@ namespace serdp_recorder {
     // Handle the one-off commands
     if( doListCards || doListInputModes ) {
         if(doListCards) DeckLink::ListCards();
-        if(doListInputModes) _deckLink->listInputModes();
+        if(doListInputModes) {
+          DeckLink dl;
+          dl.listInputModes();
+        }
       return 0;
     }
 
@@ -103,62 +108,50 @@ namespace serdp_recorder {
       LOG(WARNING) << "Starting in mode " << desiredModeString;
     }
 
-    // _recorder->setOutputDir( outputDir );
-    // _recorder->setDoSonar( doSonar );
-
     _display->setEnabled( !noDisplay );
     _display->setPreviewScale( previewScale );
 
     //  Input should always auto-detect
-    _deckLink->input().enable( mode, true, do3D );
-    _deckLink->output().enable( mode );
+    _bmClient->input().enable( mode, true, do3D );
+    _bmClient->output().enable( mode );
 
-    if( doSonar ) {
+    if( _doSonar ) {
       LOG(INFO) << "Enabling sonar";
       _sonar.reset( new SonarClient( sonarIp ) );
       _sonar->setDataRxCallback( std::bind( &SerdpRecorder::receivePing, this, std::placeholders::_1 ));
       _sonar->start();
     }
 
-    int count = 0, miss = 0, displayed = 0;
+    //int count = 0, miss = 0, displayed = 0;
 
     LOG(DEBUG) << "Starting streams";
-    if( !_deckLink->startStreams() ) {
+    if( !_bmClient->startStreams() ) {
         LOG(WARNING) << "Unable to start streams";
         exit(-1);
     }
 
-    libblackmagic::InputHandler::MatVector rawImages, scaledImages;
-    std::chrono::system_clock::time_point prevTime = std::chrono::system_clock::now();
+    //std::chrono::system_clock::time_point prevTime = std::chrono::system_clock::now();
 
     while( _keepGoing ) {
 
-      ++count;
-      if((stopAfter > 0) && (count > stopAfter)) { break; }
 
-      if( !_deckLink->input().queue().wait_for_pop( rawImages, std::chrono::milliseconds(100) ) ) {
-        // No input
+      // \TODO.  Replace with something blocking
+      usleep( 100000 );
 
-        // check for keyboard input
-        continue;
-      }
+      // ++count;
+      // if((stopAfter > 0) && (count > stopAfter)) { break; }
 
-      // Compute dt
-      std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+// //       // Compute dt
+// //       std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+// //
+// //       auto dt = now-prevTime;
+// //
+// // //std::chrono::milliseconds(dt).count()
+// //       LOG(WARNING) << "dt = " << float(dt.count())/1e6 << " ms";
+//
+//       prevTime = now;
 
-      auto dt = now-prevTime;
 
-//std::chrono::milliseconds(dt).count()
-      LOG(WARNING) << "dt = " << float(dt.count())/1e6 << " ms";
-
-      prevTime = now;
-
-      if( _recorder ) _recorder->addMats( rawImages );
-
-      _display->showVideo( rawImages );
-
-      LOG_IF(INFO, (displayed % 50) == 0) << "Frame #" << displayed;
-      ++displayed;
 
     }
 
@@ -168,7 +161,7 @@ namespace serdp_recorder {
 
     LOG(INFO) << "End of main loop, stopping streams...";
 
-    _deckLink->stopStreams();
+    _bmClient->stopStreams();
     if( _sonar ) _sonar->stop();
 
 
@@ -183,8 +176,30 @@ namespace serdp_recorder {
 
   }
 
+  //====
+
+  void SerdpRecorder::receiveImages( const libblackmagic::InputHandler::MatVector &rawImages ) {
+    _thread->send( std::bind( &SerdpRecorder::receiveImagesImpl, this, rawImages ) );
+  }
+
+  void SerdpRecorder::receiveImagesImpl( const libblackmagic::InputHandler::MatVector &rawImages ) {
+
+    if( _recorder ) _recorder->addMats( rawImages );
+
+    _display->showVideo( rawImages );
+
+    LOG_IF(INFO, (_displayed % 50) == 0) << "Frame #" << _displayed;
+    ++_displayed;
+
+  }
+
+  //=====
 
   void SerdpRecorder::receivePing( const shared_ptr<SimplePingResult> &ping ) {
+    _thread->send( std::bind( &SerdpRecorder::receivePingImpl, this, ping ) );
+  }
+
+  void SerdpRecorder::receivePingImpl( const shared_ptr<SimplePingResult> &ping ) {
 
     ++_pingCount;
 
@@ -197,9 +212,12 @@ namespace serdp_recorder {
     if( _display ) _display->showSonar( ping );
   }
 
+
+  //=====
+
   void SerdpRecorder::handleKey( const char c ) {
 
-  	std::shared_ptr<SharedBMSDIBuffer> sdiBuffer( _deckLink->output().sdiProtocolBuffer() );
+  	std::shared_ptr<SharedBMSDIBuffer> sdiBuffer( _bmClient->output().sdiProtocolBuffer() );
     const int CamNum = 1;
 
   	SDIBufferGuard guard( sdiBuffer );
@@ -329,14 +347,14 @@ namespace serdp_recorder {
   			   } else {
 	           LOG(INFO) << "Starting recording";
 
-	           const libblackmagic::ModeConfig config( _deckLink->input().currentConfig() );
+	           const libblackmagic::ModeConfig config( _bmClient->input().currentConfig() );
 						 const ModeParams params( config.params() );
 
 						 if( params.valid() ) {
   						 const int numStreams = config.do3D() ? 2 : 1;
   						 LOG(INFO) << "Opening video " << params.width << " x " << params.height << " with " << numStreams << " streams";
 
-               _recorder.reset( new VideoRecorder( VideoRecorder::MakeFilename( _outputDir ), params.width, params.height, params.frameRate, numStreams, _doSonar ));
+               _recorder.reset( new VideoRecorder( VideoRecorder::MakeFilename( _outputDir ).string(), params.width, params.height, params.frameRate, numStreams, _doSonar ));
       			 } else {
   						 LOG(WARNING) << "Bad configuration from the decklink";
   					 }

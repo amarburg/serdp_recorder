@@ -22,12 +22,12 @@ namespace serdp_recorder {
   class VideoRecorder : public GPMFRecorder {
   public:
 
-    VideoRecorder( const std::string &filename, int width, int height, float frameRate, int numStreams = 1, bool doSonar = false );
+    VideoRecorder( const std::string &filename, int width, int height, float frameRate, int numVideoStreams = 1, bool doSonar = false );
     virtual ~VideoRecorder();
 
-    virtual bool addMats( std::vector<cv::Mat> &mats );
+    virtual bool addMats( const std::vector<cv::Mat> &mats );
 
-    bool addMat( cv::Mat image, unsigned int stream = 0  );
+    bool addMat( const cv::Mat &image, unsigned int stream = 0  );
     virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping );
 
     static fs::path MakeFilename( std::string &outputDir );

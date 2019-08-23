@@ -89,7 +89,7 @@ namespace serdp_recorder {
   // }
 
 
-  bool VideoRecorder::addMats( std::vector<cv::Mat> &mats ) {
+  bool VideoRecorder::addMats( const std::vector<cv::Mat> &mats ) {
     if( !isRecording() ) return false;
 
     std::deque< std::shared_ptr<std::thread> > recordThreads;
@@ -108,7 +108,7 @@ namespace serdp_recorder {
   }
 
 
-  bool VideoRecorder::addMat( cv::Mat image, unsigned int stream ) {
+  bool VideoRecorder::addMat( const cv::Mat &image, unsigned int stream ) {
 
     {
       std::lock_guard<std::mutex> lock(_mutex);

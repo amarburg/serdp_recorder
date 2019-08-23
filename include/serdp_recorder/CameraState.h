@@ -7,6 +7,7 @@
 #include "libbmsdi/helpers.h"
 #include "libbmsdi/values.h"
 
+#include "libblackmagic/SDIMessageBuffer.h"
 
 namespace serdp_recorder {
 

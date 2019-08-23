@@ -3,9 +3,11 @@
 
 #include <CLI/CLI.hpp>
 
+#include "active_object/active.h"
+
 #include <libg3logger/g3logger.h>
 
-#include "libblackmagic/DeckLink.h"
+#include "libblackmagic/InputOutputClient.h"
 #include "libblackmagic/DataTypes.h"
 using namespace libblackmagic;
 
@@ -45,17 +47,27 @@ namespace serdp_recorder {
     std::string _outputDir;
     bool _doSonar;
 
-    std::shared_ptr<DeckLink> _deckLink;
+    std::shared_ptr<InputOutputClient> _bmClient;
+
     std::shared_ptr<CameraState> _camState;
 
     std::shared_ptr<SonarClient> _sonar;
-    std::shared_ptr<OpenCVDisplay> _display;
 
+    std::shared_ptr<OpenCVDisplay> _display;
     std::shared_ptr<VideoRecorder> _recorder;
 
+    // Callback from libblackmagic::InputHandler
+    void receiveImages( const libblackmagic::InputHandler::MatVector &images );
+    void receiveImagesImpl( const libblackmagic::InputHandler::MatVector &images );
+    int _displayed;
 
+
+    // Callback from liboculus::DataRx
     void receivePing( const std::shared_ptr<SimplePingResult> & );
+    void receivePingImpl( const std::shared_ptr<SimplePingResult> & );
     int _pingCount;
+
+    std::unique_ptr<active_object::Active> _thread;
 
   };
 
