@@ -185,8 +185,7 @@ namespace serdp_recorder {
   void SerdpRecorder::receiveImagesImpl( const libblackmagic::InputHandler::MatVector &rawImages ) {
 
     if( _recorder ) _recorder->addMats( rawImages );
-
-    _display->showVideo( rawImages );
+    if( _display ) _display->showVideo( rawImages );
 
     LOG_IF(INFO, (_displayed % 50) == 0) << "Frame #" << _displayed;
     ++_displayed;

@@ -25,8 +25,8 @@ namespace serdp_recorder {
     : GPMFRecorder(),
       _frameNum(0),
       _sonarFrameNum(0),
-      _pending(0),
-      _mutex(),
+  //    _pending(0),
+//      _mutex(),
       _writer(FileExtension, AV_CODEC_ID_PRORES),
       _videoTracks(),
       _dataTrack( doSonar ? new DataTrack(_writer) : nullptr )
@@ -42,53 +42,6 @@ namespace serdp_recorder {
     _writer.close();
   }
 
-
-  // bool VideoRecorder::open( int width, int height, float frameRate, int numStreams ) {
-  //   auto filename = makeFilename();
-  //
-  //   _writer.reset( _encoder->makeWriter() );
-  //   CHECK( _writer != nullptr );
-  //
-  //   _writer->addVideoTrack( width, height, frameRate, numStreams );
-  //
-  //   if( _doSonar )
-  //     _sonarTrack = _writer->addDataTrack();
-  //
-  //   LOG(INFO) << "Opening video file " << filename;
-  //
-  //   _writer->open(filename.string());
-  //
-  //   _frameNum = 0;
-  //   _sonarWritten = 0;
-  //   _startTime = std::chrono::system_clock::now();
-  //
-  //   flushGPMF();
-  //
-  //   _isReady = true;
-  //   {
-  //     std::lock_guard<std::mutex> lock(_mutex);
-  //     _pending = 0;
-  //   }
-  //   return true;
-  // }
-
-
-  // void VideoRecorder::close() {
-  //
-  //   while(true) {
-  //     std::lock_guard<std::mutex> lock(_mutex);
-  //     if( _pending == 0 ) break;
-  //   }
-  //
-  //   LOG(INFO) << "Closing video with " << _frameNum << " frames";
-  //   LOG_IF(INFO, _doSonar) << "     Wrote " << _sonarWritten << " frames of sonar";
-  //
-  //   _isReady = false;
-  //   _frameNum = 0;
-  //   _writer.reset();
-  // }
-
-
   bool VideoRecorder::addMats( const std::vector<cv::Mat> &mats ) {
     if( !isRecording() ) return false;
 
@@ -102,7 +55,7 @@ namespace serdp_recorder {
     // // Wait for all recorder threads
     for( auto thread : recordThreads ) thread->join();
 
-    advanceFrame();
+    ++_frameNum;
 
     return true;
   }
@@ -110,32 +63,33 @@ namespace serdp_recorder {
 
   bool VideoRecorder::addMat( const cv::Mat &image, unsigned int stream ) {
 
-    {
-      std::lock_guard<std::mutex> lock(_mutex);
-      ++_pending;
-    }
+    // {
+    //   std::lock_guard<std::mutex> lock(_mutex);
+    //   ++_pending;
+    // }
 
     // TODO:  Validate valid stream number
-
     // TODO:  Validate image.size() == videoTrack.size()
+
     auto sz = image.size();
-
-
     AVFrame *frame = _videoTracks[stream]->makeFrame();
 
-    // Try this_`
+    CHECK( frame->format == AV_PIX_FMT_RGB24 );
+    CHECK( image.type() == CV_8UC3 );
+
+    // This depends on both the image and the frame being 24bit RGB
     // memcpy for now
-    cv::Mat frameMat( sz.height, sz.width, CV_8UC4, frame->data[0]);
+    cv::Mat frameMat( sz.height, sz.width, CV_8UC3, frame->data[0]);
     image.copyTo( frameMat );
 
     auto res = _videoTracks[stream]->addFrame( frame, _frameNum );
 
     av_frame_free( &frame );
 
-    {
-      std::lock_guard<std::mutex> lock(_mutex);
-      --_pending;
-    }
+    // {
+    //   std::lock_guard<std::mutex> lock(_mutex);
+    //   --_pending;
+    // }
 
     return res;
   }
@@ -143,11 +97,11 @@ namespace serdp_recorder {
   bool VideoRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping ) {
 
     if( !_dataTrack ) return false;
-
-    {
-      std::lock_guard<std::mutex> lock(_mutex);
-      ++_pending;
-    }
+    //
+    // {
+    //   std::lock_guard<std::mutex> lock(_mutex);
+    //   ++_pending;
+    // }
 
     {
       uint32_t *buffer;
@@ -155,10 +109,10 @@ namespace serdp_recorder {
       auto payloadSize = writeSonar( ping, &buffer, 0 );
       if( payloadSize == 0) {
         LOG(WARNING) << "Failed to write sonar!";
-        {
-          std::lock_guard<std::mutex> lock(_mutex);
-          --_pending;
-        }
+        // {
+        //   std::lock_guard<std::mutex> lock(_mutex);
+        //   --_pending;
+        // }
         return false;
       }
 
@@ -170,10 +124,10 @@ namespace serdp_recorder {
       ++_sonarFrameNum;
     }
 
-    {
-      std::lock_guard<std::mutex> lock(_mutex);
-      --_pending;
-    }
+    // {
+    //   std::lock_guard<std::mutex> lock(_mutex);
+    //   --_pending;
+    // }
     return true;
   }
 

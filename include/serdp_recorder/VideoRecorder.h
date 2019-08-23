@@ -26,8 +26,8 @@ namespace serdp_recorder {
     virtual ~VideoRecorder();
 
     virtual bool addMats( const std::vector<cv::Mat> &mats );
-
     bool addMat( const cv::Mat &image, unsigned int stream = 0  );
+
     virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping );
 
     static fs::path MakeFilename( std::string &outputDir );
@@ -38,14 +38,10 @@ namespace serdp_recorder {
     bool open( );
     void close();
 
-    void advanceFrame() { ++_frameNum; }
-
-    int _frameNum;
-
+    unsigned int _frameNum;
     unsigned int _sonarFrameNum;
 
-    unsigned int _pending;
-    std::mutex _mutex;
+    //std::mutex _mutex;
 
     std::chrono::time_point< std::chrono::system_clock > _startTime;
 
