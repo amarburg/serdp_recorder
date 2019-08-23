@@ -31,19 +31,20 @@ namespace serdp_recorder {
       _videoTracks(),
       _dataTrack( doSonar ? new DataTrack(_writer) : nullptr )
   {
-    for( int i = 0; i < numStreams; ++i )
+    for( int i = 0; i < numStreams; ++i ) {
       _videoTracks.push_back( std::shared_ptr<VideoTrack>(new VideoTrack(_writer, width, height, frameRate) ) );
+    }
 
     _writer.open( filename );
   }
 
   VideoRecorder::~VideoRecorder()
   {
+    sleep(2);
     _writer.close();
   }
 
   bool VideoRecorder::addMats( const std::vector<cv::Mat> &mats ) {
-    if( !isRecording() ) return false;
 
     std::deque< std::shared_ptr<std::thread> > recordThreads;
 
@@ -72,14 +73,14 @@ namespace serdp_recorder {
     // TODO:  Validate image.size() == videoTrack.size()
 
     auto sz = image.size();
-    AVFrame *frame = _videoTracks[stream]->makeFrame();
+    AVFrame *frame = _videoTracks[stream]->makeFrame(AV_PIX_FMT_BGRA  );
 
-    CHECK( frame->format == AV_PIX_FMT_RGB24 );
-    CHECK( image.type() == CV_8UC3 );
+    //CHECK( frame->format == AV_PIX_FMT_RGB24 );
+    //CHECK( image.type() == CV_8UC3 );
 
     // This depends on both the image and the frame being 24bit RGB
     // memcpy for now
-    cv::Mat frameMat( sz.height, sz.width, CV_8UC3, frame->data[0]);
+    cv::Mat frameMat( sz.height, sz.width, CV_8UC4, frame->data[0]);
     image.copyTo( frameMat );
 
     auto res = _videoTracks[stream]->addFrame( frame, _frameNum );

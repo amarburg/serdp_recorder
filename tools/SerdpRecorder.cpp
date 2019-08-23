@@ -339,7 +339,7 @@ namespace serdp_recorder {
   					break;
 
   			case '\\':
-  			   if( _recorder->isRecording() ) {
+  			   if( _recorder ) {
 	           LOG(INFO) << "Stopping recording";
 	           _recorder.reset();
 
