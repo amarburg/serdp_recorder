@@ -24,7 +24,8 @@ namespace serdp_recorder {
       {;}
 
     virtual bool addMats( std::vector<cv::Mat> &mats ) = 0;
-    virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping ) = 0;
+    virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping,
+                          const std::chrono::time_point< std::chrono::system_clock > time = std::chrono::system_clock::now()) = 0;
 
   };
 

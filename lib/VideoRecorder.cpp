@@ -72,7 +72,7 @@ namespace serdp_recorder {
     // TODO:  Validate image.size() == videoTrack.size()
 
     auto sz = image.size();
-    AVFrame *frame = _videoTracks[stream]->makeFrame();
+    AVFrame *frame = _videoTracks[stream]->allocateFrame();
 
     CHECK( frame->format == AV_PIX_FMT_RGB24 );
     CHECK( image.type() == CV_8UC3 );
@@ -82,7 +82,7 @@ namespace serdp_recorder {
     cv::Mat frameMat( sz.height, sz.width, CV_8UC3, frame->data[0]);
     image.copyTo( frameMat );
 
-    auto res = _videoTracks[stream]->addFrame( frame, _frameNum );
+    auto res = _videoTracks[stream]->writeFrame( frame, _frameNum );
 
     av_frame_free( &frame );
 
@@ -94,7 +94,7 @@ namespace serdp_recorder {
     return res;
   }
 
-  bool VideoRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping ) {
+  bool VideoRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > timePt ) {
 
     if( !_dataTrack ) return false;
     //
@@ -117,9 +117,7 @@ namespace serdp_recorder {
       }
 
       //LOG(WARNING) << "   packet->pts " << pkt->pts;
-
-      std::chrono::microseconds timePt =  std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - _startTime);
-      _dataTrack->writeData( (uint8_t *)buffer, payloadSize,  timePt.count() );
+      _dataTrack->writeData( (uint8_t *)buffer, payloadSize, timePt );
 
       ++_sonarFrameNum;
     }

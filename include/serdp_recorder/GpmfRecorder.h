@@ -31,7 +31,8 @@ namespace serdp_recorder {
     bool isRecording() const { return _out.is_open(); }
 
     virtual bool addMats( std::vector<cv::Mat> &mats ) { return false; }
-    virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping );
+    virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping,
+                          const std::chrono::time_point< std::chrono::system_clock > time = std::chrono::system_clock::now() );
 
   protected:
 

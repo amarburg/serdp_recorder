@@ -58,13 +58,13 @@ namespace serdp_recorder {
 
     // Callback from libblackmagic::InputHandler
     void receiveImages( const libblackmagic::InputHandler::MatVector &images );
-    void receiveImagesImpl( const libblackmagic::InputHandler::MatVector &images );
+    void receiveImagesImpl( const libblackmagic::InputHandler::MatVector &images, const std::chrono::time_point< std::chrono::system_clock > time );
     int _displayed;
 
 
     // Callback from liboculus::DataRx
     void receivePing( const std::shared_ptr<SimplePingResult> & );
-    void receivePingImpl( const std::shared_ptr<SimplePingResult> & );
+    void receivePingImpl( const std::shared_ptr<SimplePingResult> &, const std::chrono::time_point< std::chrono::system_clock > time );
     int _pingCount;
 
     std::unique_ptr<active_object::Active> _thread;

@@ -57,6 +57,22 @@ namespace serdp_recorder {
     _out.close();
   }
 
+
+  bool GPMFRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > time ) {
+    if( !_out.is_open() ) return false;
+
+    uint32_t *buffer = nullptr;
+    auto bufferSize = writeSonar( ping, &buffer, 0 );
+    if( bufferSize == 0 ) return false;
+
+    _out.write( (const char *)buffer, bufferSize );
+
+    if( buffer != nullptr ) av_free(buffer);
+
+    return true;
+  }
+
+
   void GPMFRecorder::initGPMF()
   {
     GPMFWriteSetScratchBuffer( _gpmfHandle, _scratch.get(), BufferSize );
@@ -107,20 +123,6 @@ namespace serdp_recorder {
     return payloadSize;
   }
 
-
-  bool GPMFRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping ) {
-    if( !_out.is_open() ) return false;
-
-    uint32_t *buffer = nullptr;
-    auto bufferSize = writeSonar( ping, &buffer, 0 );
-    if( bufferSize == 0 ) return false;
-
-    _out.write( (const char *)buffer, bufferSize );
-
-    if( buffer != nullptr ) av_free(buffer);
-
-    return true;
-  }
 
 
 }

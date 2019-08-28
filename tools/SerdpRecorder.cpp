@@ -179,10 +179,10 @@ namespace serdp_recorder {
   //====
 
   void SerdpRecorder::receiveImages( const libblackmagic::InputHandler::MatVector &rawImages ) {
-    _thread->send( std::bind( &SerdpRecorder::receiveImagesImpl, this, rawImages ) );
+    _thread->send( std::bind( &SerdpRecorder::receiveImagesImpl, this, rawImages, std::chrono::system_clock::now() ) );
   }
 
-  void SerdpRecorder::receiveImagesImpl( const libblackmagic::InputHandler::MatVector &rawImages ) {
+  void SerdpRecorder::receiveImagesImpl( const libblackmagic::InputHandler::MatVector &rawImages, const std::chrono::time_point< std::chrono::system_clock > time ) {
 
     if( _recorder ) _recorder->addMats( rawImages );
     if( _display ) _display->showVideo( rawImages );
@@ -195,10 +195,10 @@ namespace serdp_recorder {
   //=====
 
   void SerdpRecorder::receivePing( const shared_ptr<SimplePingResult> &ping ) {
-    _thread->send( std::bind( &SerdpRecorder::receivePingImpl, this, ping ) );
+    _thread->send( std::bind( &SerdpRecorder::receivePingImpl, this, ping, std::chrono::system_clock::now() ) );
   }
 
-  void SerdpRecorder::receivePingImpl( const shared_ptr<SimplePingResult> &ping ) {
+  void SerdpRecorder::receivePingImpl( const shared_ptr<SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > time ) {
 
     ++_pingCount;
 
@@ -207,7 +207,7 @@ namespace serdp_recorder {
     LOG(DEBUG) << "Got " << (valid ? "valid" : "invalid") << " ping";
 
     // Send to recorder
-    if( _recorder ) _recorder->addSonar( ping );
+    if( _recorder ) _recorder->addSonar( ping, time );
     if( _display ) _display->showSonar( ping );
   }
 
