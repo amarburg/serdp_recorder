@@ -21,10 +21,8 @@ namespace serdp_recorder {
 
   const size_t BufferSize = 10 * 1024 * 1024;
 
-  GPMFRecorder::GPMFRecorder( const std::string &filename )
-    : Recorder(),
-      _scratch( new uint32_t[BufferSize] ),
-      _out(),
+  GPMFEncoder::GPMFEncoder( )
+    : _scratch( new uint32_t[BufferSize] ),
       _gpmfHandle( GPMFWriteServiceInit() ),
       _sonarHandle( GPMFWriteStreamOpen(_gpmfHandle, GPMF_CHANNEL_TIMED, GPMF_DEVICE_ID_OCULUS_SONAR, SonarName, NULL, BufferSize) )
     {
@@ -32,48 +30,31 @@ namespace serdp_recorder {
       CHECK( _sonarHandle ) << "Unable to initialize GPMF stream for sonar";
 
       initGPMF();
-
-      if( filename.size() > 0 ) open( filename );
     }
 
-  GPMFRecorder::~GPMFRecorder()
+  GPMFEncoder::~GPMFEncoder()
   {
     GPMFWriteStreamClose(_sonarHandle);
     GPMFWriteServiceClose(_gpmfHandle);
   }
 
-  bool GPMFRecorder::open( const std::string &filename ) {
-
-    _out.open( filename, ios_base::binary | ios_base::out );
-
-    if( !_out.is_open() ) return false;
-
-    flushGPMF();
-
-    return true;
-  }
-
-  void GPMFRecorder::close() {
-    _out.close();
-  }
-
-
-  bool GPMFRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > time ) {
-    if( !_out.is_open() ) return false;
-
-    uint32_t *buffer = nullptr;
-    auto bufferSize = writeSonar( ping, &buffer, 0 );
-    if( bufferSize == 0 ) return false;
-
-    _out.write( (const char *)buffer, bufferSize );
-
-    if( buffer != nullptr ) av_free(buffer);
-
-    return true;
-  }
+  //
+  // bool GPMFEncoder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > time ) {
+  //   if( !_out.is_open() ) return false;
+  //
+  //   uint32_t *buffer = nullptr;
+  //   auto bufferSize = writeSonar( ping, &buffer, 0 );
+  //   if( bufferSize == 0 ) return false;
+  //
+  //   _out.write( (const char *)buffer, bufferSize );
+  //
+  //   if( buffer != nullptr ) av_free(buffer);
+  //
+  //   return true;
+  // }
 
 
-  void GPMFRecorder::initGPMF()
+  void GPMFEncoder::initGPMF()
   {
     GPMFWriteSetScratchBuffer( _gpmfHandle, _scratch.get(), BufferSize );
 
@@ -82,14 +63,14 @@ namespace serdp_recorder {
                           strlen(name), 1, (void *)name, GPMF_FLAGS_STICKY);
   }
 
-  void GPMFRecorder::flushGPMF()
+  void GPMFEncoder::flushGPMF()
   {
     // Flush any stale data before starting video capture.
     uint32_t *payload, payload_size;
     GPMFWriteGetPayload(_gpmfHandle, GPMF_CHANNEL_TIMED, _scratch.get(), BufferSize, &payload, &payload_size);
   }
 
-  size_t GPMFRecorder::writeSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, uint32_t **buffer, size_t bufferSize )
+  size_t GPMFEncoder::writeSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, uint32_t **buffer, size_t bufferSize )
   {
     const uint64_t timestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -123,6 +104,9 @@ namespace serdp_recorder {
     return payloadSize;
   }
 
+  void GPMFEncoder::free( uint32_t *buffer ) {
+    av_free( buffer );
+  }
 
 
 }

@@ -14,12 +14,12 @@ namespace fs = boost::filesystem;
 
 #include "liboculus/SimplePingResult.h"
 
-#include "serdp_recorder/GpmfRecorder.h"
+#include "serdp_recorder/GpmfEncoder.h"
 
 namespace serdp_recorder {
 
 
-  class VideoRecorder : public GPMFRecorder {
+  class VideoRecorder {
   public:
 
     VideoRecorder( const std::string &filename, int width, int height, float frameRate, int numVideoStreams = 1, bool doSonar = false );
@@ -50,7 +50,7 @@ namespace serdp_recorder {
     std::vector< std::shared_ptr<libvideoencoder::VideoTrack> > _videoTracks;
     std::shared_ptr<libvideoencoder::DataTrack> _dataTrack;
 
-
+    GPMFEncoder _gpmfEncoder;
   };
 
 

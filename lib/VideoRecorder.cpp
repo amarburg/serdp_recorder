@@ -22,14 +22,14 @@ namespace serdp_recorder {
 
   VideoRecorder::VideoRecorder( const std::string &filename, int width, int height,
             float frameRate, int numStreams, bool doSonar )
-    : GPMFRecorder(),
-      _frameNum(0),
+    : _frameNum(0),
       _sonarFrameNum(0),
   //    _pending(0),
 //      _mutex(),
       _writer(FileExtension, AV_CODEC_ID_PRORES),
       _videoTracks(),
-      _dataTrack( doSonar ? new DataTrack(_writer) : nullptr )
+      _dataTrack( doSonar ? new DataTrack(_writer) : nullptr ),
+      _gpmfEncoder()
   {
     for( int i = 0; i < numStreams; ++i ) {
       _videoTracks.push_back( std::shared_ptr<VideoTrack>(new VideoTrack(_writer, width, height, frameRate) ) );
@@ -104,7 +104,7 @@ namespace serdp_recorder {
     {
       uint32_t *buffer;
 
-      auto payloadSize = writeSonar( ping, &buffer, 0 );
+      auto payloadSize = _gpmfEncoder.writeSonar( ping, &buffer, 0 );
       if( payloadSize == 0) {
         LOG(WARNING) << "Failed to write sonar!";
         // {

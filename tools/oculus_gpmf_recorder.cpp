@@ -25,7 +25,7 @@ using namespace liboculus;
 #include "serdp_common/OpenCVDisplay.h"
 using namespace serdp_common;
 
-#include "serdp_recorder/GpmfRecorder.h"
+#include "serdp_recorder/GpmfEncoder.h"
 using namespace serdp_recorder;
 
 using std::ofstream;
@@ -36,7 +36,6 @@ using std::unique_ptr;
 
 int playbackSonarFile( const std::string &filename,
                         const std::shared_ptr<OpenCVDisplay> &display = std::shared_ptr<OpenCVDisplay>(nullptr),
-                        const shared_ptr<Recorder> &recorder = shared_ptr<Recorder>(nullptr),
                         int count = -1 );
 
 
@@ -71,19 +70,16 @@ int main( int argc, char **argv ) {
 
   shared_ptr<OpenCVDisplay> display;
 
-  shared_ptr<GPMFRecorder> output( new GPMFRecorder );
-
-  if( !outputFilename.empty() ) {
-    output.reset( new GPMFRecorder( outputFilename ) );
-
-    if( !output->isRecording() ) {
-      LOG(WARNING) << "Unable to open " << outputFilename << " for output.";
-      exit(-1);
-    }
-  }
 
   if( !inputFilename.empty() ) {
-    return playbackSonarFile( inputFilename, display, output, stopAfter );
+    return playbackSonarFile( inputFilename, display, stopAfter );
+  }
+
+  GPMFEncoder encoder;
+  ofstream output;
+
+  if( outputFilename.size() > 0 ) {
+    output.open(outputFilename);
   }
 
   int count = 0;
@@ -96,7 +92,15 @@ int main( int argc, char **argv ) {
     auto valid = ping->valid();
     LOG(INFO) << "Got " << (valid ? "valid" : "invalid") << " ping";
 
-    if( output ) output->addSonar( ping );
+    if( output.is_open() ) {
+      uint32_t *buffer = nullptr;
+       auto bufferSize = encoder.writeSonar( ping, &buffer, 0 );
+       if( bufferSize == 0 ) return false;
+
+       output.write( (const char *)buffer, bufferSize );
+
+       if( buffer != nullptr ) encoder.free(buffer);
+    }
 
     count++;
     if( (stopAfter>0) && (count >= stopAfter)) sonar->stop();
@@ -109,8 +113,7 @@ int main( int argc, char **argv ) {
 }
 
 
-int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCVDisplay> &display,
-                          const shared_ptr<Recorder> &recorder, int count ) {
+int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCVDisplay> &display, int count ) {
 
   std::shared_ptr<SonarPlayerBase> player( SonarPlayerBase::OpenFile(filename) );
 
@@ -124,15 +127,13 @@ int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCV
     return -1;
   }
 
-
-
   std::shared_ptr<SimplePingResult> ping( player->nextPing() );
   int numPings = 1;
 
   while( ping && (count >= 0 && numPings <= count) ) {
     if( ping->valid()) {
-      //if( display ) display->showSonar( ping );
-      if( recorder ) recorder->addSonar( ping );
+      if( display ) display->showSonar( ping );
+      //if( recorder ) recorder->addSonar( ping );
     }
 
 
