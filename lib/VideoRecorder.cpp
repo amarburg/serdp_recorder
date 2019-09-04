@@ -48,7 +48,6 @@ namespace serdp_recorder {
 
     std::deque< std::shared_ptr<std::thread> > recordThreads;
 
-    // Video corruption when this encoding is split into two threads.
     for( unsigned int i=0; i < mats.size(); ++i ) {
        recordThreads.push_back( shared_ptr<std::thread>( new std::thread( &VideoRecorder::addMat, this, mats[i], i ) ) );
     }
