@@ -34,7 +34,7 @@ public:
 
   protected:
 
-    int _idx, _min, _max;
+    unsigned int _idx, _min, _max;
 };
 
 template <typename RefStruct, const RefStruct RefTable[], size_t _tableSize >
@@ -87,7 +87,7 @@ public:
 
 
   protected:
-    int _idx;
+    unsigned int _idx;
 
 };
 

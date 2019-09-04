@@ -37,8 +37,16 @@ void signal_handler( int sig )
 
 int main( int argc, char** argv )
 {
-	signal( SIGINT, signal_handler );
-	app.reset( new serdp_recorder::SerdpRecorder() );
+	int retval = 0;
+	libg3logger::G3Logger logger("serdp_recorder");
 
-	return app->run( argc, argv );
+	// Scope the app so it is cleaned up before the logger is cleaned up..
+	{
+		signal( SIGINT, signal_handler );
+		app.reset( new serdp_recorder::SerdpRecorder( logger ) );
+
+		retval = app->run( argc, argv );
+	}
+
+	return retval;
 }

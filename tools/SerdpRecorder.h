@@ -33,7 +33,8 @@ namespace serdp_recorder {
   class SerdpRecorder {
   public:
 
-    SerdpRecorder();
+    SerdpRecorder( libg3logger::G3Logger &logger );
+    ~SerdpRecorder();
 
     bool keepGoing( bool kg ) { return _keepGoing = kg; }
 
@@ -42,6 +43,8 @@ namespace serdp_recorder {
     void handleKey( const char c );
 
   protected:
+
+    libg3logger::G3Logger &_logger;
 
     bool _keepGoing;
     std::string _outputDir;

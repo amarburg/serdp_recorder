@@ -13,8 +13,9 @@ namespace serdp_recorder {
 
   using std::placeholders::_1;
 
-  SerdpRecorder::SerdpRecorder( void )
-    : _keepGoing( true ),
+  SerdpRecorder::SerdpRecorder( libg3logger::G3Logger &logger )
+    : _logger(logger),
+      _keepGoing( true ),
       _bmClient( new InputOutputClient() ),
       _camState( new CameraState( _bmClient->output().sdiProtocolBuffer() ) ),
       _sonar( nullptr ),
@@ -27,9 +28,11 @@ namespace serdp_recorder {
     _bmClient->input().setNewImagesCallback( std::bind( &SerdpRecorder::receiveImages, this, std::placeholders::_1 ));
   }
 
+  SerdpRecorder::~SerdpRecorder()
+  {;}
+
   int SerdpRecorder::run( int argc, char **argv )
   {
-    libg3logger::G3Logger logger("serdp_recorder");
 
     CLI::App app{"Simple BlackMagic camera recorder"};
 
@@ -71,10 +74,10 @@ namespace serdp_recorder {
 
     switch(verbosity) {
       case 1:
-        logger.stderrHandle->call( &ColorStderrSink::setThreshold, INFO );
+        _logger.stderrHandle->call( &ColorStderrSink::setThreshold, INFO );
         break;
       case 2:
-        logger.stderrHandle->call( &ColorStderrSink::setThreshold, DEBUG );
+        _logger.stderrHandle->call( &ColorStderrSink::setThreshold, DEBUG );
         break;
     }
 
@@ -204,7 +207,7 @@ namespace serdp_recorder {
 
     // Do something
     auto valid = ping->valid();
-    LOG(DEBUG) << "Got " << (valid ? "valid" : "invalid") << " ping";
+    LOG_IF(DEBUG, (bool)_recorder) << "Recording " << (valid ? "valid" : "invalid") << " ping";
 
     // Send to recorder
     if( _recorder ) _recorder->addSonar( ping, time );

@@ -50,7 +50,10 @@ namespace serdp_recorder {
     std::deque< std::shared_ptr<std::thread> > recordThreads;
 
     for( unsigned int i=0; i < mats.size(); ++i ) {
-       recordThreads.push_back( shared_ptr<std::thread>( new std::thread( &VideoRecorder::addMat, this, mats[i], i ) ) );
+       recordThreads.push_back( shared_ptr<std::thread>( new std::thread( &VideoRecorder::addMat, this, mats[i],  _frameNum, i ) ) );
+
+       // AVPacket *pkt = _videoTracks[i]->encodeFrame( mats[i], _frameNum );
+       // _writerThread.writePacket( pkt );
     }
 
     // // Wait for all recorder threads
@@ -62,9 +65,9 @@ namespace serdp_recorder {
   }
 
 
-  bool VideoRecorder::addMat( const cv::Mat &image, unsigned int stream )
+  bool VideoRecorder::addMat( const cv::Mat &image, unsigned int frameNum, unsigned int stream )
   {
-    AVPacket *pkt = _videoTracks[stream]->encodeFrame( image, _frameNum );
+    AVPacket *pkt = _videoTracks[stream]->encodeFrame( image, frameNum );
     if( !pkt ) return false;
 
     _writerThread.writePacket( pkt );
@@ -135,6 +138,11 @@ namespace serdp_recorder {
     {;}
 
   void VideoRecorder::VideoWriterThread::writePacket( AVPacket *packet ) {
+    if( _thread->size() > 10 ) {
+      LOG( WARNING ) << "More than 10 frames queued ... skipping";
+      return;
+    }
+
     _thread->send( std::bind( &VideoRecorder::VideoWriterThread::writePacketImpl, this, packet ) );
   }
 

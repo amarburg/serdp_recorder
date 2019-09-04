@@ -47,7 +47,7 @@ namespace serdp_recorder {
     virtual ~VideoRecorder();
 
     virtual bool addMats( const std::vector<cv::Mat> &mats );
-    bool addMat( const cv::Mat &image, unsigned int stream = 0  );
+    bool addMat( const cv::Mat &image, unsigned int frameNum, unsigned int stream=0  );
 
     virtual bool addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping,
                           const std::chrono::time_point< std::chrono::system_clock > time = std::chrono::system_clock::now() );
