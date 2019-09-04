@@ -9,6 +9,8 @@ namespace fs = boost::filesystem;
 
 #include <opencv2/opencv.hpp>
 
+#include "active_object/active.h"
+
 #include "libvideoencoder/VideoWriter.h"
 #include "libvideoencoder/OutputTrack.h"
 
@@ -20,6 +22,25 @@ namespace serdp_recorder {
 
 
   class VideoRecorder {
+  protected:
+
+    class VideoWriterThread {
+    public:
+      VideoWriterThread( libvideoencoder::VideoWriter &writer );
+      ~VideoWriterThread();
+
+      void writePacket( AVPacket *packet );
+
+    protected:
+
+      void writePacketImpl( AVPacket *packet );
+
+      libvideoencoder::VideoWriter &_writer;
+      std::unique_ptr<active_object::Active> _thread;
+    };
+
+
+
   public:
 
     VideoRecorder( const std::string &filename, int width, int height, float frameRate, int numVideoStreams = 1, bool doSonar = false );
@@ -43,10 +64,11 @@ namespace serdp_recorder {
     unsigned int _sonarFrameNum;
 
     //std::mutex _mutex;
-
     std::chrono::time_point< std::chrono::system_clock > _startTime;
 
     libvideoencoder::VideoWriter _writer;
+    VideoWriterThread _writerThread;
+
     std::vector< std::shared_ptr<libvideoencoder::VideoTrack> > _videoTracks;
     std::shared_ptr<libvideoencoder::DataTrack> _dataTrack;
 

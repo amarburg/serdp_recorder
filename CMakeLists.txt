@@ -1,7 +1,6 @@
+project( serdp_recorder )
 cmake_minimum_required(VERSION 3.5)
 if( NOT FIPS_IMPORT )
-	cmake_minimum_required(VERSION 3.5)
-
 	get_filename_component(FIPS_ROOT_DIR "../fips" ABSOLUTE)
 	include("${FIPS_ROOT_DIR}/cmake/fips.cmake")
 
@@ -28,8 +27,6 @@ IF(APPLE)
 ENDIF()
 
 
-## Configure OpenCV ##
-
 ## Find Blackmagic SDK
 set( BLACKMAGIC_FORCE_LINUX TRUE )
 find_package( BlackmagicSDK REQUIRED )
@@ -40,7 +37,6 @@ fips_include_directories(
   ${BLACKMAGIC_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
  )
-
 
 # The local library
 fips_begin_module( serdp_recorder )

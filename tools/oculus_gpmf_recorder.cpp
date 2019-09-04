@@ -87,7 +87,7 @@ int main( int argc, char **argv ) {
   LOG(INFO) << "Enabling sonar";
   std::unique_ptr<SonarClient> sonar( new SonarClient( sonarIp ) );
 
-  sonar->setDataRxCallback( [&]( const shared_ptr<SimplePingResult> &ping ) {
+  sonar->setDataRxCallback( [&]( const shared_ptr<SimplePingResult> &ping ) -> bool {
       // Do something
     auto valid = ping->valid();
     LOG(INFO) << "Got " << (valid ? "valid" : "invalid") << " ping";
@@ -104,6 +104,8 @@ int main( int argc, char **argv ) {
 
     count++;
     if( (stopAfter>0) && (count >= stopAfter)) sonar->stop();
+
+    return true;
   });
 
   sonar->start();

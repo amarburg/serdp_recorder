@@ -27,6 +27,7 @@ namespace serdp_recorder {
   //    _pending(0),
 //      _mutex(),
       _writer(FileExtension, AV_CODEC_ID_PRORES),
+      _writerThread( _writer ),
       _videoTracks(),
       _dataTrack( doSonar ? new DataTrack(_writer) : nullptr ),
       _gpmfEncoder()
@@ -61,34 +62,13 @@ namespace serdp_recorder {
   }
 
 
-  bool VideoRecorder::addMat( const cv::Mat &image, unsigned int stream ) {
+  bool VideoRecorder::addMat( const cv::Mat &image, unsigned int stream )
+  {
+    AVPacket *pkt = _videoTracks[stream]->encodeFrame( image, _frameNum );
+    if( !pkt ) return false;
 
-    // {
-    //   std::lock_guard<std::mutex> lock(_mutex);
-    //   ++_pending;
-    // }
-
-    // TODO:  Validate valid stream number
-    // TODO:  Validate image.size() == videoTrack.size()
-
-    auto sz = image.size();
-    AVFrame *frame = _videoTracks[stream]->allocateFrame(AV_PIX_FMT_BGRA);
-
-    // This depends on both the image and the frame being 24bit RGB
-    // memcpy for now
-    cv::Mat frameMat( sz.height, sz.width, CV_8UC4, frame->data[0]);
-    image.copyTo( frameMat );
-
-    auto res = _videoTracks[stream]->writeFrame( frame, _frameNum );
-
-    av_frame_free( &frame );
-
-    // {
-    //   std::lock_guard<std::mutex> lock(_mutex);
-    //   --_pending;
-    // }
-
-    return res;
+    _writerThread.writePacket( pkt );
+    return true;
   }
 
   bool VideoRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > timePt ) {
@@ -114,7 +94,8 @@ namespace serdp_recorder {
       }
 
       //LOG(WARNING) << "   packet->pts " << pkt->pts;
-      _dataTrack->writeData( (uint8_t *)buffer, payloadSize, timePt );
+      AVPacket *pkt = _dataTrack->encodeData( (uint8_t *)buffer, payloadSize, timePt );
+      _writerThread.writePacket( pkt );
 
       ++_sonarFrameNum;
     }
@@ -141,6 +122,26 @@ namespace serdp_recorder {
 
     return fs::path(outputDir) /= mbstr;
   }
+
+
+  //=================================================================
+
+  VideoRecorder::VideoWriterThread::VideoWriterThread( libvideoencoder::VideoWriter &writer )
+    : _writer(writer),
+      _thread( active_object::Active::createActive() )
+    {;}
+
+  VideoRecorder::VideoWriterThread::~VideoWriterThread()
+    {;}
+
+  void VideoRecorder::VideoWriterThread::writePacket( AVPacket *packet ) {
+    _thread->send( std::bind( &VideoRecorder::VideoWriterThread::writePacketImpl, this, packet ) );
+  }
+
+  void VideoRecorder::VideoWriterThread::writePacketImpl( AVPacket *packet ) {
+    _writer.writePacket( packet );
+  }
+
 
 
 
