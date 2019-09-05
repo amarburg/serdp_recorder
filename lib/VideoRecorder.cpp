@@ -70,6 +70,7 @@ namespace serdp_recorder {
     AVPacket *pkt = _videoTracks[stream]->encodeFrame( image, frameNum );
     if( !pkt ) return false;
 
+    // Insert into the _writerThread queue
     _writerThread.writePacket( pkt );
     return true;
   }
