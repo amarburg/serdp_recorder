@@ -66,8 +66,8 @@ namespace serdp_recorder {
 
 
     // Callback from liboculus::DataRx
-    void receivePing( const std::shared_ptr<SimplePingResult> & );
-    void receivePingImpl( const std::shared_ptr<SimplePingResult> &, const std::chrono::time_point< std::chrono::system_clock > time );
+    void receivePing( const SimplePingResult & );
+    void receivePingImpl( const SimplePingResult &, const std::chrono::time_point< std::chrono::system_clock > time );
     int _pingCount;
 
     std::unique_ptr<active_object::Active> _thread;

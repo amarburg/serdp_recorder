@@ -22,7 +22,7 @@ namespace serdp_recorder {
     GPMFEncoder( );
     virtual ~GPMFEncoder();
 
-    size_t writeSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, uint32_t **buffer, size_t bufferSize );
+    size_t writeSonar( const liboculus::SimplePingResult &ping, uint32_t **buffer, size_t bufferSize );
 
     void free( uint32_t *buffer );
 

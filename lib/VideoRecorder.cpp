@@ -75,7 +75,7 @@ namespace serdp_recorder {
     return true;
   }
 
-  bool VideoRecorder::addSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > timePt ) {
+  bool VideoRecorder::addSonar( const liboculus::SimplePingResult &ping, const std::chrono::time_point< std::chrono::system_clock > timePt ) {
 
     if( !_dataTrack ) return false;
     //

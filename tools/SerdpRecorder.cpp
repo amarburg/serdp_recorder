@@ -120,7 +120,8 @@ namespace serdp_recorder {
 
     if( _doSonar ) {
       LOG(INFO) << "Enabling sonar";
-      _sonar.reset( new SonarClient( sonarIp ) );
+      liboculus::SonarConfiguration sonarConfig;
+      _sonar.reset( new SonarClient( sonarConfig, sonarIp ) );
       _sonar->setDataRxCallback( std::bind( &SerdpRecorder::receivePing, this, std::placeholders::_1 ));
       _sonar->start();
     }
@@ -197,16 +198,16 @@ namespace serdp_recorder {
 
   //=====
 
-  void SerdpRecorder::receivePing( const shared_ptr<SimplePingResult> &ping ) {
+  void SerdpRecorder::receivePing( const SimplePingResult &ping ) {
     _thread->send( std::bind( &SerdpRecorder::receivePingImpl, this, ping, std::chrono::system_clock::now() ) );
   }
 
-  void SerdpRecorder::receivePingImpl( const shared_ptr<SimplePingResult> &ping, const std::chrono::time_point< std::chrono::system_clock > time ) {
+  void SerdpRecorder::receivePingImpl( const SimplePingResult &ping, const std::chrono::time_point< std::chrono::system_clock > time ) {
 
     ++_pingCount;
 
     // Do something
-    auto valid = ping->valid();
+    auto valid = ping.valid();
     LOG_IF(DEBUG, (bool)_recorder) << "Recording " << (valid ? "valid" : "invalid") << " ping";
 
     // Send to recorder

@@ -85,11 +85,12 @@ int main( int argc, char **argv ) {
   int count = 0;
 
   LOG(INFO) << "Enabling sonar";
-  std::unique_ptr<SonarClient> sonar( new SonarClient( sonarIp ) );
+  SonarConfiguration sonarConfig;
+  std::unique_ptr<SonarClient> sonar( new SonarClient( sonarConfig, sonarIp ) );
 
-  sonar->setDataRxCallback( [&]( const shared_ptr<SimplePingResult> &ping ) -> bool {
+  sonar->setDataRxCallback( [&]( const SimplePingResult &ping ) -> bool {
       // Do something
-    auto valid = ping->valid();
+    auto valid = ping.valid();
     LOG(INFO) << "Got " << (valid ? "valid" : "invalid") << " ping";
 
     if( output.is_open() ) {
@@ -129,19 +130,16 @@ int playbackSonarFile( const std::string &filename, const std::shared_ptr<OpenCV
     return -1;
   }
 
-  std::shared_ptr<SimplePingResult> ping( player->nextPing() );
+  SimplePingResult ping;
   int numPings = 1;
 
-  while( ping && (count >= 0 && numPings <= count) ) {
-    if( ping->valid()) {
+  while( player->nextPing(ping) && (count >= 0 && numPings <= count) ) {
+    if( ping.valid()) {
       if( display ) display->showSonar( ping );
       //if( recorder ) recorder->addSonar( ping );
     }
 
-
     cv::waitKey(1);
-
-    ping = player->nextPing();
     numPings++;
   }
 

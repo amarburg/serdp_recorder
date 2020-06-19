@@ -70,15 +70,15 @@ namespace serdp_recorder {
     GPMFWriteGetPayload(_gpmfHandle, GPMF_CHANNEL_TIMED, _scratch.get(), BufferSize, &payload, &payload_size);
   }
 
-  size_t GPMFEncoder::writeSonar( const std::shared_ptr<liboculus::SimplePingResult> &ping, uint32_t **buffer, size_t bufferSize )
+  size_t GPMFEncoder::writeSonar( const liboculus::SimplePingResult &ping, uint32_t **buffer, size_t bufferSize )
   {
     const uint64_t timestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     {
       // Mark as big endian so it doesn't try to byte-swap the data.
-      LOG(INFO) << "Writing " << (ping->buffer()->size() >> 2) << " dwords of sonar";
+      LOG(INFO) << "Writing " << (ping.size() >> 2) << " dwords of sonar";
       auto err = GPMFWriteStreamStoreStamped(_sonarHandle, STR2FOURCC("OCUS"), GPMF_TYPE_UNSIGNED_LONG,
-                                          4, (ping->buffer()->size() >> 2), ping->buffer()->ptr(),
+                                          4, (ping.size() >> 2), ping.ptr(),
                                           GPMF_FLAGS_BIG_ENDIAN | GPMF_FLAGS_STORE_ALL_TIMESTAMPS, timestamp);
       if( err != GPMF_ERROR_OK ) {
         LOG(WARNING) << "Error writing to GPMF store";
