@@ -10,7 +10,7 @@ imports:
         git: https://github.com/apl-ocean-engineering/liboculus.git
     libvideoencoder:
         git: https://github.com/apl-ocean-engineering/libvideoencoder.git
-    libgpmf-fips:
+    libgpmf:
         git: https://github.com/apl-ocean-engineering/libgpmf-fips.git
     serdp_common:
         git: https://github.com/apl-ocean-engineering/serdp_common.git
